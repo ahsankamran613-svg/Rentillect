@@ -10,7 +10,14 @@ async def health_check():
     settings = get_settings()
     supabase = get_supabase_admin()
     
-    db_status = "configured" if supabase is not None else "pending_credentials"
+    db_status = "unconfigured"
+    if supabase is not None:
+        try:
+            # Quick ping query
+            res = supabase.table("cities").select("id").limit(1).execute()
+            db_status = "connected" if res.data is not None else "degraded"
+        except Exception as e:
+            db_status = f"error: {str(e)[:50]}"
     
     return {
         "status": "ok",
