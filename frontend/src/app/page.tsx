@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   Building2, 
   ShieldCheck, 
@@ -62,6 +63,9 @@ export default function Home() {
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
+            <Link href="/properties" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">
+              Browse Properties
+            </Link>
             <a href="#features" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Features</a>
             <a href="#coverage" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Cities</a>
             <a href="#compliance" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Legal Tenancy Acts</a>
@@ -69,12 +73,18 @@ export default function Home() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button className="text-sm font-semibold px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <Link
+              href="/login"
+              className="text-sm font-semibold px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
               Log In
-            </button>
-            <button className="text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95">
+            </Link>
+            <Link
+              href="/signup"
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
+            >
               Get Started
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -100,19 +110,19 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a 
-                href="#features"
+              <Link 
+                href="/properties"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold bg-pitch hover:bg-zinc-800 text-white border border-white/10 shadow-lg shadow-black/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              >
+                <span>Browse Rental Properties</span>
+                <ArrowRight className="w-4 h-4 text-emerald-400" />
+              </Link>
+              <Link 
+                href="/signup"
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
               >
-                <span>Browse Listings</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-              <a 
-                href="#architecture"
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all"
-              >
-                Live Backend Status
-              </a>
+                <span>List Your Property</span>
+              </Link>
             </div>
 
             {/* Quick Metrics */}

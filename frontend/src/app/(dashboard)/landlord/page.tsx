@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
+import { apiClient } from "@/lib/api";
+import { Property } from "@/types/property";
 import { 
   Building, 
   FileText, 
@@ -16,6 +19,30 @@ import Link from "next/link";
 
 export default function LandlordDashboard() {
   const user = useAuthStore((state) => state.user);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProperties() {
+      try {
+        const data = await apiClient<Property[]>("/properties/mine", { requireAuth: true });
+        setProperties(data || []);
+      } catch {
+        // Fallback gracefully for guests/unauthorized
+        setProperties([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProperties();
+  }, []);
+
+  const totalProperties = properties.length;
+  const occupiedCount = properties.filter((p) => p.status === "occupied").length;
+  const listedCount = properties.filter((p) => p.status === "active").length;
+  const totalRevenue = properties
+    .filter((p) => p.status === "active" || p.status === "occupied")
+    .reduce((sum, p) => sum + (p.rent_amount || 0), 0);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -31,32 +58,46 @@ export default function LandlordDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 text-sm transition-all hover:scale-105 active:scale-95">
+          <Link
+            href="/landlord/properties/new"
+            id="btn-add-property"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 text-sm transition-all hover:scale-105 active:scale-95"
+          >
             <Plus className="w-4 h-4" />
             <span>Add Property</span>
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <Link
+          href="/landlord/properties"
+          className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-emerald-500/50 hover:shadow-md transition-all group block"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider">Properties</span>
-            <Building className="w-5 h-5 text-emerald-600" />
+            <span className="text-xs font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Properties</span>
+            <Building className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-3xl font-black text-slate-900 dark:text-white">0</div>
-          <div className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-            <span>0 occupied • 0 listed</span>
+          <div className="text-3xl font-black text-slate-900 dark:text-white">
+            {loading ? "..." : totalProperties}
           </div>
-        </div>
+          <div className="text-xs text-slate-500 mt-2 flex items-center justify-between">
+            <span>{occupiedCount} occupied • {listedCount} listed</span>
+            <span className="text-emerald-600 font-semibold group-hover:underline flex items-center gap-0.5">
+              Manage <ArrowUpRight className="w-3 h-3" />
+            </span>
+          </div>
+        </Link>
 
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
             <span className="text-xs font-bold uppercase tracking-wider">Monthly Revenue</span>
             <Banknote className="w-5 h-5 text-teal-600" />
           </div>
-          <div className="text-3xl font-black text-slate-900 dark:text-white">PKR 0</div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white">
+            PKR {loading ? "..." : totalRevenue.toLocaleString()}
+          </div>
           <div className="text-xs text-slate-500 mt-2 flex items-center gap-1">
             <span>Expected rent for current month</span>
           </div>
@@ -102,8 +143,8 @@ export default function LandlordDashboard() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-emerald-300">
-            <span>Status: Phase 1 Operational</span>
-            <span className="font-semibold">Next: Property Listings (Phase 2)</span>
+            <span>Status: Phase 1 & Phase 2 Operational</span>
+            <span className="font-semibold">Next: Digital Leases & Signatures (Phase 3)</span>
           </div>
         </div>
 

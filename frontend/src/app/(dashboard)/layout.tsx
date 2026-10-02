@@ -30,7 +30,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, activeRole, logout, checkSession, loading } = useAuthStore();
+  const { user, activeRole, logout, checkSession, loading, switchRole } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -64,16 +64,42 @@ export default function DashboardLayout({
     { label: "Orphaned Properties", href: "/admin/orphaned", icon: ShieldAlert },
   ];
 
+  // Determine current active section:
+  // 1. Current URL pathname takes precedence (/landlord vs /tenant vs /admin)
+  // 2. Fallback to activeRole in store
+  // 3. Fallback to "landlord"
+  const activeSection = pathname.startsWith("/landlord")
+    ? "landlord"
+    : pathname.startsWith("/tenant")
+    ? "tenant"
+    : pathname.startsWith("/admin")
+    ? "admin"
+    : activeRole || "landlord";
+
   const currentNav =
-    activeRole === "admin"
+    activeSection === "admin"
       ? adminNav
-      : activeRole === "landlord"
-      ? landlordNav
-      : tenantNav;
+      : activeSection === "tenant"
+      ? tenantNav
+      : landlordNav;
+
+  // Auto-sync activeRole in store if user has permission
+  useEffect(() => {
+    if (user && user.roles.includes(activeSection as any) && activeRole !== activeSection) {
+      switchRole(activeSection as any);
+    }
+  }, [pathname, user, activeRole, activeSection, switchRole]);
 
   const handleLogout = async () => {
     await logout();
     router.push("/login");
+  };
+
+  const isItemActive = (href: string) => {
+    if (href === "/landlord" || href === "/tenant" || href === "/admin") {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
   };
 
   return (
@@ -95,22 +121,22 @@ export default function DashboardLayout({
         {/* Navigation */}
         <div className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
           <div className="px-3 pb-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            {activeRole ? `${activeRole} Portal` : "Navigation"}
+            {`${activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} Portal`}
           </div>
           {currentNav.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const active = isItemActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  isActive
+                  active
                     ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-850 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-slate-400"}`} />
+                <Icon className={`w-4 h-4 ${active ? "text-emerald-600" : "text-slate-400"}`} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -143,6 +169,56 @@ export default function DashboardLayout({
           </div>
         </div>
       </aside>
+
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <div
+            className="w-64 h-full bg-white dark:bg-slate-900 flex flex-col p-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <span className="font-extrabold text-base text-slate-900 dark:text-white">
+                Rent<span className="text-emerald-500">illect</span>
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 py-4 space-y-1">
+              <div className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                {`${activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} Portal`}
+              </div>
+              {currentNav.map((item) => {
+                const Icon = item.icon;
+                const active = isItemActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+                      active
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">

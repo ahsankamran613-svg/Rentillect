@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.config import get_settings
-from backend.app.routers import health, auth, profiles, admin
+from backend.app.routers import health, auth, profiles, admin, properties
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
     app.include_router(profiles.router, prefix=settings.API_V1_PREFIX)
     app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
+    app.include_router(properties.router, prefix=settings.API_V1_PREFIX)
 
     @app.get("/")
     async def root():

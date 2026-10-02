@@ -11,6 +11,9 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        pitch: "#000000",
+        obsidian: "#09090b",
+        darkcard: "#121215",
         brand: {
           50: "#ecfdf5",
           100: "#d1fae5",

@@ -99,7 +99,7 @@ graph TB
 |---|---|:---:|---|
 | **Phase 0** | **Scaffolding & Infrastructure** | **COMPLETE** | Monorepo layout, Next.js 15, FastAPI, PostgreSQL initial schemas & seed data. |
 | **Phase 1** | **User & Role Management** | **COMPLETE** | Supabase Auth, Dual-Role accounts (Landlord + Tenant), CNIC formatting, profile management, and role-based dashboard shells. |
-| **Phase 2** | **Property Listing Manager & Maps** | *In Progress* | CRUD listings, Leaflet.js map pin placement, PKR rent amounts, and Cloudinary multi-image uploads. |
+| **Phase 2** | **Property Listings, Maps & Photos** | **COMPLETE** | Public search & split-view marketplace, Leaflet.js interactive maps & pin drop, PKR pricing, Cloudinary photo uploads, and 3-step listing creation wizard. |
 | **Phase 3** | **Tenant Screening & CNIC Verification** | *Planned* | Rental applications, income proofs, and AI-assisted CNIC document checks. |
 | **Phase 4** | **Smart Lease Assistant & Provincial RAG** | *Planned* | Direct Gemini PDF contract analysis, Punjab/Sindh/ICT tenancy act comparison. |
 | **Phase 5** | **Rent Payments & Digital Receipts** | *Planned* | Monthly PKR rent payment ledger, status tracking, and printable receipts. |
@@ -123,11 +123,49 @@ User (Single Auth Account)
 
 ---
 
-## 📡 API Endpoints (Phase 1)
+## 🗺️ Phase 2 Highlights: Property Listings, Leaflet Maps & Cloudinary
+
+Phase 2 brings full residential property management tailored specifically for the Pakistani rental market:
+
+### 1. Interactive Leaflet & OpenStreetMap Explorer
+* **Marketplace Browse Mode**: Multi-marker map with custom Jet Black & Emerald price badges (e.g., `₨ 85k`, `₨ 1.4 Lac`). Clicking pins pops up property cards with direct links.
+* **Draggable Pin-Drop Mode**: Landlords can click anywhere in Pakistan or drag a marker to set pinpoint geographic coordinates for their listings.
+
+### 2. Public Marketplace Split-View (`/properties`)
+* **Dynamic Pakistani Filters**: Filter by City (Islamabad, Lahore, Karachi, Rawalpindi, etc.), Area/Sector, Property Type (House, Apartment, Portion, Room), PKR rent range, Bedrooms, and Furnishing.
+* **Responsive Split View**: Left side features responsive cards with Cloudinary photo previews; right side features sticky Leaflet map explorer.
+* **Mobile-Optimized**: Toggle between List and Map views on mobile devices.
+
+### 3. Comprehensive Property Detail Page (`/properties/[id]`)
+* **Interactive Photo Gallery**: Cloudinary multi-photo viewer.
+* **PKR Rent Breakdown**: Monthly rent, refundable security deposit, and lease term standards.
+* **Pakistani Amenities**: Badges for 24/7 Backup Generator/UPS, Sui Gas connection, Sweet Water / Boring, 24/7 Gated Security, and Dedicated Parking.
+* **Verified Landlord Direct Connect**: One-click WhatsApp message and direct calling links with masked privacy.
+
+### 4. 3-Step Landlord Listing Creation Wizard (`/landlord/properties/new`)
+* **Step 1: Details & PKR Pricing**: Specs, rent, security deposit, and description.
+* **Step 2: Pakistani Location & Pin Drop**: City/area selectors with interactive map coordinate picker.
+* **Step 3: Cloudinary Photos & Utilities**: Multi-file upload with cover photo selection and utility checklist.
+
+---
+
+## 📡 API Endpoints Reference
 
 All endpoints are prefixed with `/api/v1` and accessible via Swagger at `http://localhost:8000/docs`:
 
-### Authentication & Profiles
+### Properties & Geographic Data (Phase 2)
+* `GET /properties/cities` — Retrieve all 8 pre-seeded Pakistani cities.
+* `GET /properties/cities/{city_id}/areas` — Fetch all residential sectors/societies for a given city.
+* `GET /properties` — Public marketplace search with multi-parameter filtering (city, area, type, min/max rent, bedrooms, furnished).
+* `GET /properties/mine` — *(Landlord Only)* Retrieve all listings owned by the authenticated landlord.
+* `POST /properties` — *(Landlord Only)* Create a new property listing with amenities and coordinates.
+* `GET /properties/{property_id}` — Public endpoint retrieving complete property details, photos, and landlord contact.
+* `PATCH /properties/{property_id}` — *(Landlord Only)* Update details of an existing listing.
+* `DELETE /properties/{property_id}` — *(Landlord Only)* Delist a property.
+* `POST /properties/{property_id}/images` — *(Landlord Only)* Upload property photo directly to Cloudinary CDN and attach to listing.
+* `DELETE /properties/{property_id}/images/{image_id}` — *(Landlord Only)* Delete image from Cloudinary and listing.
+
+### Authentication & Profiles (Phase 1)
 * `POST /auth/signup` — Register new user with auto-confirmation, profile creation, and initial role (`landlord` or `tenant`).
 * `POST /auth/login` — Authenticate with email/password and obtain Bearer JWT.
 * `GET /auth/me` — Retrieve authenticated user profile and all assigned roles.
