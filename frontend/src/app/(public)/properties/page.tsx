@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { apiClient } from "@/lib/api";
 import { Property, City, Area, PropertyType } from "@/types/property";
 import PropertyCard from "@/components/properties/PropertyCard";
@@ -16,6 +16,9 @@ import {
   List,
   Heart,
   X,
+  BedDouble,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 
 // Standard coordinates for major Pakistani cities
@@ -51,6 +54,49 @@ export default function PropertiesMarketplacePage() {
   const [maxRent, setMaxRent] = useState<string>("");
   const [bedrooms, setBedrooms] = useState<string>("");
   const [isFurnished, setIsFurnished] = useState<boolean | undefined>(undefined);
+
+  // Bedrooms Multi-Select Popover State
+  const [isBedsDropdownOpen, setIsBedsDropdownOpen] = useState(false);
+  const bedsDropdownRef = useRef<HTMLDivElement>(null);
+
+  const BED_OPTIONS = [
+    { id: "1", label: "1 Bed" },
+    { id: "2", label: "2 Beds" },
+    { id: "3", label: "3 Beds" },
+    { id: "4", label: "4 Beds" },
+    { id: "5", label: "5 Beds" },
+    { id: "6", label: "6 Beds" },
+    { id: "7", label: "7 Beds" },
+    { id: "7+", label: "7+ Beds" },
+  ];
+
+  const selectedBedsList = useMemo(() => {
+    return bedrooms ? bedrooms.split(",").filter(Boolean) : [];
+  }, [bedrooms]);
+
+  const toggleBedOption = (bedId: string) => {
+    let updated: string[];
+    if (selectedBedsList.includes(bedId)) {
+      updated = selectedBedsList.filter((b) => b !== bedId);
+    } else {
+      updated = [...selectedBedsList, bedId];
+    }
+    setBedrooms(updated.join(","));
+  };
+
+  const clearBedrooms = () => {
+    setBedrooms("");
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (bedsDropdownRef.current && !bedsDropdownRef.current.contains(event.target as Node)) {
+        setIsBedsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // 1. Fetch cities on mount
   useEffect(() => {
@@ -148,6 +194,7 @@ export default function PropertiesMarketplacePage() {
     setBedrooms("");
     setIsFurnished(undefined);
     setOnlyFavorites(false);
+    setIsBedsDropdownOpen(false);
   };
 
   return (
@@ -272,37 +319,107 @@ export default function PropertiesMarketplacePage() {
             )}
 
             {/* Property Type Selector */}
-            <div className="relative min-w-[140px]">
+            <div className="relative min-w-[155px]">
               <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
               <select
                 value={selectedType || ""}
                 onChange={(e) => setSelectedType(e.target.value ? (e.target.value as PropertyType) : undefined)}
-                className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none cursor-pointer text-zinc-800 dark:text-zinc-200 capitalize"
+                className="w-full pl-9 pr-7 py-2 text-xs font-semibold bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none cursor-pointer text-zinc-800 dark:text-zinc-200 capitalize"
               >
                 <option value="">Any Type</option>
-                <option value="apartment">Apartment</option>
+                <option value="apartment">Apartment / Flat</option>
                 <option value="house">House / Villa</option>
-                <option value="portion">Upper/Lower Portion</option>
-                <option value="room">Single Room</option>
+                <option value="upper_portion">Upper Portion</option>
+                <option value="lower_portion">Lower Portion</option>
+                <option value="portion">All Portions</option>
+                <option value="room">Single Room / Studio</option>
+                <option value="penthouse">Penthouse</option>
+                <option value="farm_house">Farmhouse</option>
               </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
             </div>
 
-            {/* Bedrooms Selector */}
-            <div className="relative min-w-[110px]">
-              <select
-                value={bedrooms}
-                onChange={(e) => setBedrooms(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none cursor-pointer text-zinc-800 dark:text-zinc-200"
+            {/* Custom Modern Bedrooms Multi-Select Selector */}
+            <div className="relative" ref={bedsDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsBedsDropdownOpen((prev) => !prev)}
+                className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all flex items-center gap-2 cursor-pointer ${
+                  selectedBedsList.length > 0
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20"
+                    : "bg-zinc-100 dark:bg-darkcard border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300"
+                }`}
               >
-                <option value="">Any Beds</option>
-                <option value="1">1+ Bed</option>
-                <option value="2">2+ Beds</option>
-                <option value="3">3+ Beds</option>
-                <option value="4">4+ Beds</option>
-              </select>
+                <BedDouble className={`w-3.5 h-3.5 ${selectedBedsList.length > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400"}`} />
+                <span>
+                  {selectedBedsList.length === 0
+                    ? "Any Beds"
+                    : selectedBedsList.length === 1
+                    ? BED_OPTIONS.find((b) => b.id === selectedBedsList[0])?.label || `${selectedBedsList[0]} Bed`
+                    : `${selectedBedsList.join(", ")} Beds`}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${isBedsDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Popover Card */}
+              {isBedsDropdownOpen && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-72 bg-white dark:bg-obsidian border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-50 p-3.5 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800/80 mb-3">
+                    <div>
+                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Number of Bedrooms</span>
+                      <p className="text-[10px] text-zinc-400">Select one or multiple options</p>
+                    </div>
+                    {selectedBedsList.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearBedrooms}
+                        className="text-[11px] font-semibold text-zinc-400 hover:text-red-500 transition-colors"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {BED_OPTIONS.map((opt) => {
+                      const isSelected = selectedBedsList.includes(opt.id);
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => toggleBedOption(opt.id)}
+                          className={`py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-between border transition-all ${
+                            isSelected
+                              ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                              : "bg-zinc-50 dark:bg-darkcard border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
+                    <span className="text-[10px] text-zinc-400">
+                      {selectedBedsList.length === 0
+                        ? "Showing all bedroom counts"
+                        : `${selectedBedsList.length} count${selectedBedsList.length > 1 ? "s" : ""} selected`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsBedsDropdownOpen(false)}
+                      className="px-3 py-1 bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black rounded-lg text-xs font-semibold transition-colors"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Price Filter (Min - Max PKR) */}
+            {/* Price Filter (Min - Max PKR, direct entry without up/down stepper arrows) */}
             <div className="flex items-center gap-1.5">
               <input
                 type="number"
@@ -310,7 +427,7 @@ export default function PropertiesMarketplacePage() {
                 value={minRent}
                 onChange={(e) => setMinRent(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchProperties()}
-                className="w-24 px-2.5 py-2 text-xs bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-zinc-800 dark:text-zinc-200"
+                className="w-24 px-2.5 py-2 text-xs bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-zinc-800 dark:text-zinc-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-zinc-400 text-xs">-</span>
               <input
@@ -319,7 +436,7 @@ export default function PropertiesMarketplacePage() {
                 value={maxRent}
                 onChange={(e) => setMaxRent(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchProperties()}
-                className="w-24 px-2.5 py-2 text-xs bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-zinc-800 dark:text-zinc-200"
+                className="w-24 px-2.5 py-2 text-xs bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-zinc-800 dark:text-zinc-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 

@@ -26,7 +26,33 @@ import {
   Car,
   Home,
   Check,
+  Sun,
+  Waves,
+  Gauge,
+  Radio,
+  Trees,
+  Layers,
+  Wifi,
+  Warehouse,
+  Trash2,
+  Building,
 } from "lucide-react";
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  apartment: "Apartment / Flat",
+  house: "Independent House / Villa",
+  upper_portion: "Upper Portion",
+  lower_portion: "Lower Portion",
+  portion: "Portion",
+  room: "Single Room / Studio",
+  penthouse: "Penthouse",
+  farm_house: "Farmhouse",
+};
+
+function formatPropertyType(type?: string): string {
+  if (!type) return "Property";
+  return PROPERTY_TYPE_LABELS[type.toLowerCase()] || type.replace(/_/g, " ");
+}
 
 // Amenity display config with relevant icons
 const AMENITY_MAP: Record<string, { label: string; icon: any }> = {
@@ -34,15 +60,31 @@ const AMENITY_MAP: Record<string, { label: string; icon: any }> = {
   generator: { label: "Backup Generator", icon: Zap },
   sui_gas: { label: "Sui Gas Connection", icon: Flame },
   gas: { label: "Sui Gas", icon: Flame },
-  sweet_water: { label: "Borehole / Sweet Water", icon: Droplet },
+  solar_system: { label: "Solar System / Inverter", icon: Sun },
+  sweet_water: { label: "Sweet / Boring Water", icon: Droplet },
   water_supply: { label: "24/7 Water Supply", icon: Droplet },
+  ro_plant: { label: "Water Filtration Plant (RO)", icon: Waves },
+  separate_meter: { label: "Separate Electricity Meter", icon: Gauge },
+  gas_geyser: { label: "Water Geyser Installed", icon: Flame },
+  water_storage: { label: "Water Tanks (Ground & Roof)", icon: Droplet },
   dedicated_parking: { label: "Dedicated Car Parking", icon: Car },
   parking: { label: "Car Parking", icon: Car },
-  security_staff: { label: "24/7 Gated Security", icon: ShieldCheck },
+  security_staff: { label: "24/7 Gated Security Guard", icon: ShieldCheck },
   gated_community: { label: "Gated Community", icon: ShieldCheck },
+  cctv_security: { label: "CCTV Surveillance", icon: Radio },
   elevators: { label: "High-Speed Elevators", icon: Home },
-  balcony: { label: "Balcony / Terrace", icon: Sparkles },
   servant_quarter: { label: "Servant Quarter", icon: Home },
+  driver_room: { label: "Driver Room / Rest Area", icon: Home },
+  balcony: { label: "Balcony / Terrace", icon: Sparkles },
+  private_lawn: { label: "Lawn / Private Garden", icon: Trees },
+  rooftop_access: { label: "Private Rooftop Access", icon: Layers },
+  guest_powder_room: { label: "Powder Room (Guest Bath)", icon: Sparkles },
+  store_room: { label: "Store Room / Laundry", icon: Warehouse },
+  fiber_internet: { label: "High-Speed Fiber Internet", icon: Wifi },
+  waste_disposal: { label: "Daily Trash Collection", icon: Trash2 },
+  central_heating_ac: { label: "Central Heating / AC", icon: Zap },
+  mosque_nearby: { label: "Mosque / Masjid Nearby", icon: Building },
+  market_park_nearby: { label: "Market & Park Nearby", icon: Sparkles },
 };
 
 export default function PropertyDetailPage() {
@@ -175,7 +217,7 @@ export default function PropertyDetailPage() {
         <div className="mb-6">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="bg-pitch text-white text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-white/10">
-              {property.property_type}
+              {formatPropertyType(property.property_type)}
             </span>
             {property.is_furnished && (
               <span className="bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">

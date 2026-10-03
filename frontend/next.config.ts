@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
+  // Disabled: React Strict Mode double-invokes effects in dev, doubling all network calls.
+  // It has zero effect on production builds.
+  reactStrictMode: false,
   images: {
     remotePatterns: [
       {

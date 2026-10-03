@@ -1,4 +1,12 @@
-export type PropertyType = "house" | "apartment" | "room" | "portion";
+export type PropertyType =
+  | "house"
+  | "apartment"
+  | "room"
+  | "portion"
+  | "upper_portion"
+  | "lower_portion"
+  | "farm_house"
+  | "penthouse";
 export type PropertyStatus = "draft" | "active" | "occupied" | "delisted" | "orphaned";
 
 export interface City {

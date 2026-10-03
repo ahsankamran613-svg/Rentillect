@@ -12,6 +12,22 @@ interface PropertyCardProps {
   onMouseLeave?: () => void;
 }
 
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  apartment: "Apartment",
+  house: "House",
+  upper_portion: "Upper Portion",
+  lower_portion: "Lower Portion",
+  portion: "Portion",
+  room: "Single Room",
+  penthouse: "Penthouse",
+  farm_house: "Farmhouse",
+};
+
+export function formatPropertyType(type?: string): string {
+  if (!type) return "Property";
+  return PROPERTY_TYPE_LABELS[type.toLowerCase()] || type.replace(/_/g, " ");
+}
+
 export default function PropertyCard({
   property,
   isSelected = false,
@@ -59,7 +75,7 @@ export default function PropertyCard({
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
             <div className="flex items-center gap-1.5">
               <span className="bg-black/90 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md border border-white/10 shadow-sm">
-                {property.property_type}
+                {formatPropertyType(property.property_type)}
               </span>
 
               {property.is_furnished && (

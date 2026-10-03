@@ -11,17 +11,21 @@ import {
   CreditCard, 
   Users, 
   MessageSquare, 
-  Search, 
   LogOut, 
   ShieldAlert, 
   Bell, 
   Menu, 
   X,
   Compass,
-  Key
+  ArrowLeftRight,
+  Plus,
+  Sparkles,
+  RefreshCw
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
-import { RoleSwitcher } from "@/components/shared/RoleSwitcher";
+import { UserMenu } from "@/components/shared/UserMenu";
+import { apiClient } from "@/lib/api";
+import { UserProfile, UserRole } from "@/types";
 
 export default function DashboardLayout({
   children,
@@ -30,8 +34,9 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, activeRole, logout, checkSession, loading, switchRole } = useAuthStore();
+  const { user, activeRole, logout, checkSession, switchRole, updateUser } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loadingRole, setLoadingRole] = useState(false);
 
   useEffect(() => {
     checkSession();
@@ -68,13 +73,15 @@ export default function DashboardLayout({
   // 1. Current URL pathname takes precedence (/landlord vs /tenant vs /admin)
   // 2. Fallback to activeRole in store
   // 3. Fallback to "landlord"
-  const activeSection = pathname.startsWith("/landlord")
-    ? "landlord"
-    : pathname.startsWith("/tenant")
-    ? "tenant"
-    : pathname.startsWith("/admin")
-    ? "admin"
-    : activeRole || "landlord";
+  const activeSection = (
+    pathname.startsWith("/landlord")
+      ? "landlord"
+      : pathname.startsWith("/tenant")
+      ? "tenant"
+      : pathname.startsWith("/admin")
+      ? "admin"
+      : activeRole || "landlord"
+  ) as "landlord" | "tenant" | "admin";
 
   const currentNav =
     activeSection === "admin"
@@ -83,16 +90,45 @@ export default function DashboardLayout({
       ? tenantNav
       : landlordNav;
 
-  // Auto-sync activeRole in store if user has permission
-  useEffect(() => {
-    if (user && user.roles.includes(activeSection as any) && activeRole !== activeSection) {
-      switchRole(activeSection as any);
-    }
-  }, [pathname, user, activeRole, activeSection, switchRole]);
+  const hasLandlord = user?.roles?.includes("landlord");
+  const hasTenant = user?.roles?.includes("tenant");
+  const isDualRole = hasLandlord && hasTenant;
 
   const handleLogout = async () => {
     await logout();
     router.push("/login");
+  };
+
+  const handleSwitchPortal = (targetRole: UserRole) => {
+    switchRole(targetRole);
+    if (targetRole === "landlord") {
+      router.push("/landlord");
+    } else if (targetRole === "tenant") {
+      router.push("/tenant");
+    } else if (targetRole === "admin") {
+      router.push("/admin");
+    }
+  };
+
+  const handleUnlockRole = async (roleToUnlock: UserRole) => {
+    setLoadingRole(true);
+    try {
+      const updatedProfile = await apiClient<UserProfile>("/profiles/me/roles", {
+        method: "POST",
+        body: JSON.stringify({ role: roleToUnlock }),
+      });
+      updateUser(updatedProfile);
+      switchRole(roleToUnlock);
+      if (roleToUnlock === "landlord") {
+        router.push("/landlord");
+      } else {
+        router.push("/tenant");
+      }
+    } catch (err: any) {
+      alert(err.message || `Failed to activate ${roleToUnlock} mode`);
+    } finally {
+      setLoadingRole(false);
+    }
   };
 
   const isItemActive = (href: string) => {
@@ -120,9 +156,22 @@ export default function DashboardLayout({
 
         {/* Navigation */}
         <div className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
-          <div className="px-3 pb-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            {`${activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} Portal`}
+          {/* Active Portal Header Badge */}
+          <div className="px-3 pb-3 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  activeSection === "landlord"
+                    ? "bg-emerald-500"
+                    : activeSection === "tenant"
+                    ? "bg-blue-500"
+                    : "bg-purple-500"
+                }`}
+              />
+              {`${activeSection} Portal`}
+            </span>
           </div>
+
           {currentNav.map((item) => {
             const Icon = item.icon;
             const active = isItemActive(item.href);
@@ -143,11 +192,11 @@ export default function DashboardLayout({
           })}
         </div>
 
-        {/* User Card & Logout */}
+        {/* User Card & Quick Role Switch (Desktop) */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs flex-shrink-0">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-sm shadow-xs flex-shrink-0">
                 {user?.full_name ? user.full_name[0].toUpperCase() : "U"}
               </div>
               <div className="min-w-0 flex-1">
@@ -167,6 +216,17 @@ export default function DashboardLayout({
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Quick Inline Switch for Dual-Role Users */}
+          {isDualRole && (
+            <button
+              onClick={() => handleSwitchPortal(activeSection === "landlord" ? "tenant" : "landlord")}
+              className="mt-3 w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-colors"
+            >
+              <ArrowLeftRight className="w-3 h-3 text-slate-400" />
+              <span>Switch to {activeSection === "landlord" ? "Tenant" : "Landlord"} View</span>
+            </button>
+          )}
         </div>
       </aside>
 
@@ -177,7 +237,7 @@ export default function DashboardLayout({
           onClick={() => setMobileMenuOpen(false)}
         >
           <div
-            className="w-64 h-full bg-white dark:bg-slate-900 flex flex-col p-4 shadow-2xl"
+            className="w-72 h-full bg-white dark:bg-slate-900 flex flex-col p-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -186,16 +246,32 @@ export default function DashboardLayout({
               </span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg"
+                className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 py-4 space-y-1">
-              <div className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                {`${activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} Portal`}
-              </div>
+            {/* Mobile Portal Badge */}
+            <div className="pt-3 pb-2 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                {`${activeSection} Portal`}
+              </span>
+              {isDualRole && (
+                <button
+                  onClick={() => {
+                    handleSwitchPortal(activeSection === "landlord" ? "tenant" : "landlord");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400"
+                >
+                  <ArrowLeftRight className="w-3 h-3" />
+                  <span>Switch</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex-1 py-2 space-y-1 overflow-y-auto">
               {currentNav.map((item) => {
                 const Icon = item.icon;
                 const active = isItemActive(item.href);
@@ -207,7 +283,7 @@ export default function DashboardLayout({
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
                       active
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-850"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -215,6 +291,30 @@ export default function DashboardLayout({
                   </Link>
                 );
               })}
+            </div>
+
+            {/* Mobile Footer */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              {!hasLandlord && (
+                <button
+                  disabled={loadingRole}
+                  onClick={() => {
+                    handleUnlockRole("landlord");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Become a Landlord</span>
+                </button>
+              )}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Log Out</span>
+              </button>
             </div>
           </div>
         </div>
@@ -227,7 +327,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+              className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -236,15 +336,68 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Dual Role Switcher */}
-            <RoleSwitcher />
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Airbnb-Style Quick Switch / CTA Button */}
+            {activeSection === "landlord" && (
+              <>
+                {hasTenant && (
+                  <button
+                    onClick={() => handleSwitchPortal("tenant")}
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all shadow-xs"
+                    title="Switch to Tenant View"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Switch to Tenant</span>
+                  </button>
+                )}
+                <Link
+                  href="/landlord/properties/new"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs shadow-emerald-500/20"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Add Property</span>
+                  <span className="sm:hidden">Add</span>
+                </Link>
+              </>
+            )}
+
+            {activeSection === "tenant" && (
+              <>
+                {hasLandlord ? (
+                  <button
+                    onClick={() => handleSwitchPortal("landlord")}
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all shadow-xs"
+                    title="Switch to Landlord View"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Switch to Landlord</span>
+                  </button>
+                ) : (
+                  <button
+                    disabled={loadingRole}
+                    onClick={() => handleUnlockRole("landlord")}
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition-all shadow-xs"
+                    title="Start listing properties on Rentillect"
+                  >
+                    {loadingRole ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    )}
+                    <span>Become a Landlord</span>
+                  </button>
+                )}
+              </>
+            )}
 
             {/* Notification Bell */}
             <button className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               <Bell className="w-4 h-4" />
               <span className="w-2 h-2 rounded-full bg-emerald-500 absolute top-1.5 right-1.5 ring-2 ring-white dark:ring-slate-900" />
             </button>
+
+            {/* Airbnb/Upwork User Profile Dropdown Menu */}
+            <UserMenu activeSection={activeSection} />
           </div>
         </header>
 
@@ -256,3 +409,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+

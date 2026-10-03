@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from fastapi import HTTPException, status
 from backend.app.dependencies import get_supabase_admin
 from backend.app.models.property import (
@@ -137,10 +137,10 @@ class PropertyService:
         self,
         city_id: Optional[int] = None,
         area_id: Optional[int] = None,
-        property_type: Optional[PropertyTypeEnum] = None,
+        property_type: Optional[Union[PropertyTypeEnum, str]] = None,
         min_rent: Optional[float] = None,
         max_rent: Optional[float] = None,
-        bedrooms: Optional[int] = None,
+        bedrooms: Optional[Union[int, str]] = None,
         is_furnished: Optional[bool] = None,
         search: Optional[str] = None,
         status_filter: Optional[PropertyStatusEnum] = PropertyStatusEnum.ACTIVE,
@@ -160,13 +160,45 @@ class PropertyService:
         if area_id:
             query = query.eq("area_id", area_id)
         if property_type:
-            query = query.eq("property_type", property_type.value)
+            pt_val = property_type.value if hasattr(property_type, "value") else str(property_type).strip().lower()
+            if pt_val in ("apartment", "flat"):
+                query = query.eq("property_type", "apartment")
+            elif pt_val in ("portion", "any_portion"):
+                query = query.in_("property_type", ["portion", "upper_portion", "lower_portion"])
+            elif pt_val == "upper_portion":
+                query = query.in_("property_type", ["upper_portion", "portion"])
+            elif pt_val == "lower_portion":
+                query = query.in_("property_type", ["lower_portion", "portion"])
+            else:
+                query = query.eq("property_type", pt_val)
         if min_rent is not None:
             query = query.gte("rent_amount", min_rent)
         if max_rent is not None:
             query = query.lte("rent_amount", max_rent)
         if bedrooms is not None:
-            query = query.gte("bedrooms", bedrooms)
+            beds_str = str(bedrooms).strip()
+            if beds_str:
+                tokens = [t.strip() for t in beds_str.split(",") if t.strip()]
+                exact_beds = []
+                has_plus_seven = False
+                for tok in tokens:
+                    if "7+" in tok or "8+" in tok or tok == "7_plus" or tok.endswith("+"):
+                        has_plus_seven = True
+                    else:
+                        try:
+                            exact_beds.append(int(tok))
+                        except ValueError:
+                            pass
+                
+                if exact_beds and has_plus_seven:
+                    query = query.or_(f"bedrooms.in.({','.join(map(str, exact_beds))}),bedrooms.gte.7")
+                elif exact_beds:
+                    if len(exact_beds) == 1:
+                        query = query.eq("bedrooms", exact_beds[0])
+                    else:
+                        query = query.in_("bedrooms", exact_beds)
+                elif has_plus_seven:
+                    query = query.gte("bedrooms", 7)
         if is_furnished is not None:
             query = query.eq("is_furnished", is_furnished)
         if search and search.strip():

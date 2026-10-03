@@ -9,6 +9,10 @@ class PropertyTypeEnum(str, Enum):
     APARTMENT = "apartment"
     ROOM = "room"
     PORTION = "portion"
+    UPPER_PORTION = "upper_portion"
+    LOWER_PORTION = "lower_portion"
+    FARM_HOUSE = "farm_house"
+    PENTHOUSE = "penthouse"
 
 
 class PropertyStatusEnum(str, Enum):

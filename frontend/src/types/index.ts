@@ -4,7 +4,15 @@
 
 export type UserRole = "admin" | "landlord" | "tenant";
 export type UserStatus = "active" | "suspended" | "soft_deleted";
-export type PropertyType = "house" | "apartment" | "room" | "portion";
+export type PropertyType =
+  | "house"
+  | "apartment"
+  | "room"
+  | "portion"
+  | "upper_portion"
+  | "lower_portion"
+  | "farm_house"
+  | "penthouse";
 export type PropertyStatus = "draft" | "active" | "occupied" | "delisted" | "orphaned";
 export type LeaseStatus = "draft" | "active" | "expired" | "terminated" | "transferred";
 export type PaymentStatus = "paid" | "unpaid" | "overdue" | "waived";

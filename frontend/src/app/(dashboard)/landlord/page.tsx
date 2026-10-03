@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { apiClient } from "@/lib/api";
-import { Property } from "@/types/property";
+import { usePropertyStore } from "@/stores/propertyStore";
 import { 
   Building, 
   FileText, 
@@ -19,23 +18,11 @@ import Link from "next/link";
 
 export default function LandlordDashboard() {
   const user = useAuthStore((state) => state.user);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { properties, loading, fetchProperties } = usePropertyStore();
 
   useEffect(() => {
-    async function loadProperties() {
-      try {
-        const data = await apiClient<Property[]>("/properties/mine", { requireAuth: true });
-        setProperties(data || []);
-      } catch {
-        // Fallback gracefully for guests/unauthorized
-        setProperties([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProperties();
-  }, []);
+    fetchProperties(); // No-op if cache is still fresh (< 60s old)
+  }, [fetchProperties]);
 
   const totalProperties = properties.length;
   const occupiedCount = properties.filter((p) => p.status === "occupied").length;

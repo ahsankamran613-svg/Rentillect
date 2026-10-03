@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { City, Area, PropertyType, Property } from "@/types/property";
+import { usePropertyStore } from "@/stores/propertyStore";
 import PropertyMap from "@/components/maps/PropertyMap";
 import {
   ArrowLeft,
@@ -22,21 +23,50 @@ import {
   Car,
   ShieldCheck,
   CheckCircle2,
+  Sun,
+  Waves,
+  Gauge,
+  Radio,
+  Trees,
+  Layers,
+  Wifi,
+  Warehouse,
+  Trash2,
+  Building,
+  Plus,
+  Tag,
 } from "lucide-react";
 
 const PAKISTAN_AMENITIES = [
-  { id: "backup_generator", label: "Backup Generator / UPS", icon: Zap },
   { id: "sui_gas", label: "Sui Gas Connection", icon: Flame },
-  { id: "sweet_water", label: "Borehole / Sweet Water", icon: Droplet },
+  { id: "backup_generator", label: "Backup Generator / UPS", icon: Zap },
+  { id: "solar_system", label: "Solar System / Inverter", icon: Sun },
+  { id: "sweet_water", label: "Sweet / Boring Water", icon: Droplet },
+  { id: "ro_plant", label: "Water Filtration Plant (RO)", icon: Waves },
+  { id: "separate_meter", label: "Separate Electricity Meter", icon: Gauge },
+  { id: "gas_geyser", label: "Water Geyser Installed", icon: Flame },
+  { id: "water_storage", label: "Water Tanks (Ground & Roof)", icon: Droplet },
   { id: "dedicated_parking", label: "Dedicated Car Parking", icon: Car },
-  { id: "security_staff", label: "24/7 Gated Security", icon: ShieldCheck },
+  { id: "security_staff", label: "24/7 Gated Security Guard", icon: ShieldCheck },
+  { id: "cctv_security", label: "CCTV Surveillance", icon: Radio },
   { id: "elevators", label: "High-Speed Elevators", icon: Home },
-  { id: "balcony", label: "Balcony / Terrace", icon: Sparkles },
   { id: "servant_quarter", label: "Servant Quarter", icon: Home },
+  { id: "driver_room", label: "Driver Room / Rest Area", icon: Home },
+  { id: "balcony", label: "Balcony / Terrace", icon: Sparkles },
+  { id: "private_lawn", label: "Lawn / Private Garden", icon: Trees },
+  { id: "rooftop_access", label: "Private Rooftop Access", icon: Layers },
+  { id: "guest_powder_room", label: "Powder Room (Guest Bath)", icon: Sparkles },
+  { id: "store_room", label: "Store Room / Laundry", icon: Warehouse },
+  { id: "fiber_internet", label: "High-Speed Fiber Internet", icon: Wifi },
+  { id: "waste_disposal", label: "Daily Trash Collection", icon: Trash2 },
+  { id: "central_heating_ac", label: "Central Heating / AC", icon: Zap },
+  { id: "mosque_nearby", label: "Mosque / Masjid Nearby", icon: Building },
+  { id: "market_park_nearby", label: "Market & Park Nearby", icon: Sparkles },
 ];
 
 export default function NewPropertyListingPage() {
   const router = useRouter();
+  const { invalidate: invalidatePropertyCache } = usePropertyStore();
 
   // Wizard Step State
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -306,6 +336,29 @@ export default function NewPropertyListingPage() {
     );
   };
 
+  // Custom Amenities State
+  const [customAmenityInput, setCustomAmenityInput] = useState("");
+  const [customAmenities, setCustomAmenities] = useState<string[]>([]);
+
+  const handleAddCustomAmenity = () => {
+    const trimmed = customAmenityInput.trim();
+    if (!trimmed) return;
+    const normalizedKey = trimmed.toLowerCase().replace(/\s+/g, "_");
+    if (!selectedAmenities.includes(normalizedKey)) {
+      setSelectedAmenities((prev) => [...prev, normalizedKey]);
+    }
+    if (!customAmenities.includes(trimmed)) {
+      setCustomAmenities((prev) => [...prev, trimmed]);
+    }
+    setCustomAmenityInput("");
+  };
+
+  const handleRemoveCustomAmenity = (name: string) => {
+    const normalizedKey = name.toLowerCase().replace(/\s+/g, "_");
+    setSelectedAmenities((prev) => prev.filter((k) => k !== normalizedKey));
+    setCustomAmenities((prev) => prev.filter((a) => a !== name));
+  };
+
   // Step 1 Validation
   const canProceedStep1 =
     title.trim().length >= 5 &&
@@ -376,6 +429,9 @@ export default function NewPropertyListingPage() {
         }
       }
 
+      // Invalidate property cache so dashboard KPIs and properties list update immediately
+      await invalidatePropertyCache();
+
       // Redirect to the created property page
       router.push(`/properties/${created.id}`);
     } catch (err: any) {
@@ -412,7 +468,7 @@ export default function NewPropertyListingPage() {
         {[
           { step: 1, title: "1. Details & Pricing", desc: "Specs & PKR Rent" },
           { step: 2, title: "2. Location & Map", desc: "City, Sector & Pin" },
-          { step: 3, title: "3. Photos & Utilities", desc: "Cloudinary & Amenities" },
+          { step: 3, title: "3. Photos & Amenities", desc: "Available Amenities & Photos" },
         ].map((item) => (
           <div
             key={item.step}
@@ -474,8 +530,11 @@ export default function NewPropertyListingPage() {
               >
                 <option value="apartment">Apartment / Flat</option>
                 <option value="house">Independent House / Villa</option>
-                <option value="portion">Upper / Lower Portion</option>
+                <option value="upper_portion">Upper Portion</option>
+                <option value="lower_portion">Lower Portion</option>
                 <option value="room">Single Room / Studio</option>
+                <option value="penthouse">Penthouse</option>
+                <option value="farm_house">Farmhouse</option>
               </select>
             </div>
 
@@ -512,7 +571,7 @@ export default function NewPropertyListingPage() {
                   placeholder="e.g. 85000"
                   value={rentAmount}
                   onChange={(e) => setRentAmount(e.target.value ? Number(e.target.value) : "")}
-                  className="w-full pl-12 pr-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold"
+                  className="w-full pl-12 pr-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
@@ -532,7 +591,7 @@ export default function NewPropertyListingPage() {
                   onChange={(e) =>
                     setSecurityDeposit(e.target.value ? Number(e.target.value) : "")
                   }
-                  className="w-full pl-12 pr-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold"
+                  className="w-full pl-12 pr-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
@@ -547,9 +606,10 @@ export default function NewPropertyListingPage() {
               <input
                 type="number"
                 min="0"
+                placeholder="e.g. 2"
                 value={bedrooms}
-                onChange={(e) => setBedrooms(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                onChange={(e) => setBedrooms(e.target.value ? Number(e.target.value) : 0)}
+                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -560,9 +620,10 @@ export default function NewPropertyListingPage() {
               <input
                 type="number"
                 min="0"
+                placeholder="e.g. 2"
                 value={bathrooms}
-                onChange={(e) => setBathrooms(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                onChange={(e) => setBathrooms(e.target.value ? Number(e.target.value) : 0)}
+                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -575,7 +636,7 @@ export default function NewPropertyListingPage() {
                 placeholder="e.g. 1350"
                 value={areaSqft}
                 onChange={(e) => setAreaSqft(e.target.value ? Number(e.target.value) : "")}
-                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -788,19 +849,22 @@ export default function NewPropertyListingPage() {
         </div>
       )}
 
-      {/* STEP 3: Utilities & Cloudinary Photos */}
+      {/* STEP 3: Photos & Amenities */}
       {currentStep === 3 && (
         <div className="bg-white dark:bg-obsidian p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-6">
           <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-            Amenities & Cloudinary Photos
+            Amenities & Property Photos
           </h2>
 
           {/* Pakistani Amenities Multi-Select */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Select Available Amenities & Utilities
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <p className="text-[11px] text-zinc-400 mb-3">
+              Choose the facilities provided to tenants in this listing.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {PAKISTAN_AMENITIES.map((am) => {
                 const isSelected = selectedAmenities.includes(am.id);
                 const IconComp = am.icon;
@@ -811,8 +875,8 @@ export default function NewPropertyListingPage() {
                     onClick={() => toggleAmenity(am.id)}
                     className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
                       isSelected
-                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 font-semibold"
-                        : "bg-zinc-50 dark:bg-darkcard border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 font-semibold shadow-sm"
+                        : "bg-zinc-50 dark:bg-darkcard border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
                     }`}
                   >
                     <IconComp className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -823,10 +887,68 @@ export default function NewPropertyListingPage() {
             </div>
           </div>
 
-          {/* Cloudinary Multi-Photo Upload */}
+          {/* Custom Amenities Section */}
+          <div className="p-4 bg-zinc-50/70 dark:bg-darkcard/50 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+            <div>
+              <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1">
+                Add Custom Amenities / Features
+              </label>
+              <p className="text-[11px] text-zinc-400">
+                Can't find a specific feature? Type any custom amenity (e.g. Solar Geyser, Corner Plot, Separate Entrance) and click Add.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 max-w-lg">
+              <input
+                type="text"
+                placeholder="e.g. Solar Geyser, Corner Plot, Separate Entrance..."
+                value={customAmenityInput}
+                onChange={(e) => setCustomAmenityInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddCustomAmenity();
+                  }
+                }}
+                className="flex-1 px-3.5 py-2 bg-white dark:bg-obsidian border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomAmenity}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            </div>
+
+            {/* Custom Amenities Tag Chips */}
+            {customAmenities.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {customAmenities.map((amenity, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 rounded-xl text-xs font-semibold shadow-xs"
+                  >
+                    <Tag className="w-3 h-3 text-emerald-500" />
+                    <span>{amenity}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCustomAmenity(amenity)}
+                      className="text-emerald-600 hover:text-red-500 transition-colors p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Photo Upload */}
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-              Property Photos (Cloudinary Upload)
+              Property Photos (Upload Images)
             </label>
 
             <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-2xl p-6 text-center hover:border-emerald-500 transition-colors">

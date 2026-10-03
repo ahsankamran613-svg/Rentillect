@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
-import { Property } from "@/types/property";
 import { useAuthStore } from "@/stores/authStore";
+import { usePropertyStore } from "@/stores/propertyStore";
 import {
   Plus,
   Home,
@@ -22,25 +22,11 @@ import {
 export default function LandlordPropertiesPage() {
   const router = useRouter();
   const { user, activeRole } = useAuthStore();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchMyProperties = async () => {
-    try {
-      setLoading(true);
-      const data = await apiClient<Property[]>("/properties/mine", { requireAuth: true });
-      setProperties(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load properties.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { properties, loading, error, fetchProperties, invalidate } = usePropertyStore();
 
   useEffect(() => {
-    fetchMyProperties();
-  }, []);
+    fetchProperties(); // No-op if cache is still fresh (< 60s old)
+  }, [fetchProperties]);
 
   const handleDelist = async (id: string) => {
     if (!confirm("Are you sure you want to delist this property listing?")) return;
@@ -49,8 +35,8 @@ export default function LandlordPropertiesPage() {
         method: "DELETE",
         requireAuth: true,
       });
-      // Refresh list
-      fetchMyProperties();
+      // Invalidate cache so both this page and the dashboard KPIs update
+      await invalidate();
     } catch (err: any) {
       alert("Error delisting property: " + err.message);
     }

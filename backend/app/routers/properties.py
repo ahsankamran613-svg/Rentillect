@@ -48,10 +48,10 @@ async def create_area_for_city(
 async def search_properties(
     city_id: Optional[int] = Query(None, description="Filter by City ID"),
     area_id: Optional[int] = Query(None, description="Filter by Area/Sector ID"),
-    property_type: Optional[PropertyTypeEnum] = Query(None, description="Filter by property type"),
+    property_type: Optional[str] = Query(None, description="Filter by property type (apartment, house, upper_portion, lower_portion, portion, etc.)"),
     min_rent: Optional[float] = Query(None, ge=0, description="Minimum rent in PKR"),
     max_rent: Optional[float] = Query(None, ge=0, description="Maximum rent in PKR"),
-    bedrooms: Optional[int] = Query(None, ge=0, description="Minimum bedrooms"),
+    bedrooms: Optional[str] = Query(None, description="Exact or comma-separated bedroom counts e.g. '3', '3,4', '7+'"),
     is_furnished: Optional[bool] = Query(None, description="Furnished status"),
     search: Optional[str] = Query(None, description="Free-text keyword search across title and description"),
     limit: int = Query(50, ge=1, le=100),
