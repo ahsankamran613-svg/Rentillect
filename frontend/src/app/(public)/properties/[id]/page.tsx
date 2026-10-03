@@ -16,6 +16,10 @@ import {
   ShieldCheck,
   Phone,
   MessageCircle,
+  MessageSquare,
+  PhoneCall,
+  Copy,
+  Clock,
   ArrowLeft,
   Share2,
   Heart,
@@ -97,6 +101,16 @@ export default function PropertyDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [phoneCopied, setPhoneCopied] = useState(false);
+
+  const handleCopyPhone = () => {
+    if (property?.owner_phone) {
+      navigator.clipboard.writeText(property.owner_phone);
+      setPhoneCopied(true);
+      setTimeout(() => setPhoneCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     async function loadProperty() {
@@ -281,31 +295,66 @@ export default function PropertyDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Details Column */}
           <div className="lg:col-span-7 space-y-8">
-            {/* Key Specs Row */}
-            <div className="grid grid-cols-4 gap-3 p-4 rounded-2xl bg-white dark:bg-obsidian border border-zinc-200 dark:border-zinc-800 shadow-sm text-center">
-              <div className="p-2">
-                <Bed className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
-                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{property.bedrooms}</p>
-                <p className="text-[11px] text-zinc-500 uppercase tracking-wider">Bedrooms</p>
+            {/* Key Specs Row - Modern Tinted Capsule Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 sm:p-5 rounded-3xl bg-white dark:bg-obsidian border border-zinc-200/80 dark:border-zinc-800 shadow-md shadow-zinc-100/50 dark:shadow-none">
+              {/* Bedrooms */}
+              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100/80 dark:border-emerald-900/40">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs shadow-emerald-500/20">
+                  <Bed className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+                    {property.bedrooms}
+                  </p>
+                  <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider mt-1">
+                    Bedrooms
+                  </p>
+                </div>
               </div>
-              <div className="p-2 border-l border-zinc-100 dark:border-zinc-800">
-                <Bath className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
-                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{property.bathrooms}</p>
-                <p className="text-[11px] text-zinc-500 uppercase tracking-wider">Bathrooms</p>
+
+              {/* Bathrooms */}
+              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-teal-50/70 dark:bg-teal-950/20 border border-teal-100/80 dark:border-teal-900/40">
+                <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs shadow-teal-500/20">
+                  <Bath className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+                    {property.bathrooms}
+                  </p>
+                  <p className="text-[10px] font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wider mt-1">
+                    Bathrooms
+                  </p>
+                </div>
               </div>
-              <div className="p-2 border-l border-zinc-100 dark:border-zinc-800">
-                <Square className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
-                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                  {property.area_sqft || "N/A"}
-                </p>
-                <p className="text-[11px] text-zinc-500 uppercase tracking-wider">Sq. Ft.</p>
+
+              {/* Area Sq. Ft. */}
+              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/20 border border-sky-100/80 dark:border-sky-900/40">
+                <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-xs shadow-sky-500/20">
+                  <Square className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+                    {property.area_sqft ? property.area_sqft.toLocaleString() : "N/A"}
+                  </p>
+                  <p className="text-[10px] font-bold text-sky-800 dark:text-sky-300 uppercase tracking-wider mt-1">
+                    Sq. Ft.
+                  </p>
+                </div>
               </div>
-              <div className="p-2 border-l border-zinc-100 dark:border-zinc-800">
-                <Calendar className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
-                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                  {property.available_from ? new Date(property.available_from).toLocaleDateString() : "Immediate"}
-                </p>
-                <p className="text-[11px] text-zinc-500 uppercase tracking-wider mt-1">Available</p>
+
+              {/* Available Date */}
+              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-100/80 dark:border-amber-900/40">
+                <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs shadow-amber-500/20">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-zinc-900 dark:text-zinc-50 leading-tight truncate">
+                    {property.available_from ? new Date(property.available_from).toLocaleDateString() : "Immediate"}
+                  </p>
+                  <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider mt-1">
+                    Available
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -321,10 +370,18 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Pakistani Amenities Grid */}
-            <div className="bg-white dark:bg-obsidian p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-                Amenities & Utilities
-              </h2>
+            <div className="bg-white dark:bg-obsidian p-6 sm:p-7 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                    Amenities & Utilities
+                  </h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">Verified features & utility provisions</p>
+                </div>
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+                  {property.amenities?.length || 0} Listed
+                </span>
+              </div>
               {property.amenities && property.amenities.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {property.amenities.map((amenityKey, idx) => {
@@ -337,12 +394,12 @@ export default function PropertyDetailPage() {
                     return (
                       <div
                         key={idx}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-darkcard border border-zinc-100 dark:border-zinc-800/80"
+                        className="flex items-center gap-3 p-3.5 rounded-2xl bg-zinc-50/80 dark:bg-darkcard border border-zinc-100 dark:border-zinc-800/80 hover:border-emerald-300 dark:hover:border-emerald-800/60 transition-all hover:shadow-xs group"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                           <IconComp className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                           {conf.label}
                         </span>
                       </div>
@@ -384,68 +441,128 @@ export default function PropertyDetailPage() {
           {/* Sticky Sidebar: Rent & Landlord Contact Box */}
           <div className="lg:col-span-5">
             <div className="sticky top-24 space-y-4">
-              {/* Rent Calculation Card */}
-              <div className="bg-white dark:bg-obsidian p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl">
-                {/* Rent Amount */}
-                <div className="flex items-baseline justify-between mb-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+              {/* Premium Rent Booking Card */}
+              <div className="bg-white dark:bg-obsidian p-6 sm:p-7 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
+                {/* Rent Amount & Status Header */}
+                <div className="flex items-start justify-between pb-5 mb-5 border-b border-zinc-100 dark:border-zinc-800">
                   <div>
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block mb-1">
                       Monthly Rent
                     </span>
-                    <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-sm font-bold text-zinc-500">PKR</span>
-                      <span className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-50">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-sm font-bold text-zinc-400">PKR</span>
+                      <span className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
                         {property.rent_amount.toLocaleString()}
                       </span>
+                      <span className="text-xs font-semibold text-zinc-400">/mo</span>
                     </div>
                   </div>
-                  <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     {property.status.toUpperCase()}
                   </span>
                 </div>
 
-                {/* Breakdown Details */}
-                <div className="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-400 mb-6">
-                  <div className="flex justify-between">
+                {/* Lease Terms Breakdown (Platform Fee Removed!) */}
+                <div className="space-y-3 text-xs mb-6 bg-zinc-50/80 dark:bg-darkcard p-4 rounded-2xl border border-zinc-100 dark:border-zinc-800/60">
+                  <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
                     <span>Security Deposit (Refundable)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-200">
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">
                       PKR {property.security_deposit ? property.security_deposit.toLocaleString() : "0"}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Lease Term Standard</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-200">11 Months (Renewable)</span>
+                  <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+                    <span>Advance Rent Policy</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">1 Month Standard</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Rentillect Platform Fee</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">FREE</span>
+                  <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+                    <span>Standard Lease Duration</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">11 Months (Renewable)</span>
                   </div>
                 </div>
 
-                {/* Landlord Contact Actions */}
+                {/* Multi-Channel Contact Actions (Option 1) */}
                 <div className="space-y-2.5">
-                  {property.owner_phone && (
+                  {/* Primary CTA: Message Landlord (In-App Rentillect Chat) */}
+                  <Link
+                    href={`/tenant/chat?recipient_id=${property.owner_id}&property_id=${property.id}`}
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Message Landlord (In-App)</span>
+                  </Link>
+
+                  {/* Secondary Actions Side-by-Side: WhatsApp + Call */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* WhatsApp Button */}
                     <a
                       href={whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:shadow-emerald-600/20"
+                      className="py-3 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all hover:shadow-md hover:shadow-green-500/20"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Contact via WhatsApp
+                      <span>WhatsApp</span>
                     </a>
-                  )}
 
-                  {property.owner_phone && (
-                    <a
-                      href={`tel:${property.owner_phone}`}
-                      className="w-full py-3 px-4 bg-pitch hover:bg-zinc-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-white/10"
+                    {/* Call Landlord Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowCallModal((prev) => !prev)}
+                      className="py-3 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all border border-zinc-700/50 shadow-xs"
                     >
                       <Phone className="w-4 h-4 text-emerald-400" />
-                      Call Landlord ({property.owner_phone})
-                    </a>
-                  )}
+                      <span>Call Landlord</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Call Popover / Modal when clicked */}
+                {showCallModal && (
+                  <div className="mt-3 p-4 rounded-2xl bg-zinc-900 text-white border border-zinc-700 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-3">
+                      <span className="text-xs font-bold text-zinc-300">Verified Landlord Contact</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowCallModal(false)}
+                        className="text-xs text-zinc-400 hover:text-white"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between bg-zinc-800/80 p-3 rounded-xl mb-3">
+                      <span className="font-mono text-sm font-bold text-emerald-400">
+                        {property.owner_phone || "+92 300 1234567"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyPhone}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 hover:text-white bg-zinc-700 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        {phoneCopied ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <a
+                        href={`tel:${property.owner_phone || ""}`}
+                        className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" />
+                        <span>Dial Number Now</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Legal Guarantee Badge */}
                 <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-start gap-2.5 text-[11px] text-zinc-500">
@@ -457,27 +574,45 @@ export default function PropertyDetailPage() {
                 </div>
               </div>
 
-              {/* Landlord Profile Box */}
-              <div className="bg-white dark:bg-obsidian p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-pitch border-2 border-emerald-500 flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden">
-                  {property.owner_avatar ? (
-                    <img
-                      src={property.owner_avatar}
-                      alt={property.owner_name || "Landlord"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span>{(property.owner_name || "L")[0].toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                      {property.owner_name || "Verified Landlord"}
-                    </p>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              {/* High-Trust Landlord Profile Box */}
+              <div className="bg-white dark:bg-obsidian p-5 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-md shadow-zinc-100/50 dark:shadow-none">
+                <div className="flex items-center gap-3.5">
+                  <div className="relative">
+                    <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-extrabold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0 overflow-hidden">
+                      {property.owner_avatar ? (
+                        <img
+                          src={property.owner_avatar}
+                          alt={property.owner_name || "Landlord"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{(property.owner_name || "L")[0].toUpperCase()}</span>
+                      )}
+                    </div>
+                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-900 absolute -bottom-0.5 -right-0.5" />
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5">CNIC Verified Landlord</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                        {property.owner_name || "Verified Landlord"}
+                      </p>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    </div>
+                    <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      CNIC Verified Landlord
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-500">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Replies in &lt; 1 hr</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Direct Property Owner</span>
+                  </div>
                 </div>
               </div>
             </div>

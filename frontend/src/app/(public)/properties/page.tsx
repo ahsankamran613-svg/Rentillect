@@ -71,7 +71,15 @@ export default function PropertiesMarketplacePage() {
   ];
 
   const selectedBedsList = useMemo(() => {
-    return bedrooms ? bedrooms.split(",").filter(Boolean) : [];
+    if (!bedrooms) return [];
+    return bedrooms
+      .split(",")
+      .filter(Boolean)
+      .sort((a, b) => {
+        const valA = a === "7+" ? 99 : parseInt(a, 10);
+        const valB = b === "7+" ? 99 : parseInt(b, 10);
+        return valA - valB;
+      });
   }, [bedrooms]);
 
   const toggleBedOption = (bedId: string) => {
@@ -132,18 +140,36 @@ export default function PropertiesMarketplacePage() {
   }, [selectedCityId]);
 
   // 3. Fetch properties with active filters and search
-  const fetchProperties = async () => {
+  const fetchProperties = async (overrides?: {
+    keyword?: string;
+    cityId?: number;
+    areaId?: number;
+    type?: PropertyType;
+    min?: string;
+    max?: string;
+    beds?: string;
+    furnished?: boolean;
+  }) => {
     setLoading(true);
     try {
+      const keywordVal = overrides?.keyword !== undefined ? overrides.keyword : searchKeyword;
+      const cityVal = overrides?.cityId !== undefined ? overrides.cityId : selectedCityId;
+      const areaVal = overrides?.areaId !== undefined ? overrides.areaId : selectedAreaId;
+      const typeVal = overrides?.type !== undefined ? overrides.type : selectedType;
+      const minVal = overrides?.min !== undefined ? overrides.min : minRent;
+      const maxVal = overrides?.max !== undefined ? overrides.max : maxRent;
+      const bedsVal = overrides?.beds !== undefined ? overrides.beds : bedrooms;
+      const furnVal = overrides?.furnished !== undefined ? overrides.furnished : isFurnished;
+
       const params = new URLSearchParams();
-      if (searchKeyword.trim()) params.append("search", searchKeyword.trim());
-      if (selectedCityId) params.append("city_id", selectedCityId.toString());
-      if (selectedAreaId) params.append("area_id", selectedAreaId.toString());
-      if (selectedType) params.append("property_type", selectedType);
-      if (minRent) params.append("min_rent", minRent);
-      if (maxRent) params.append("max_rent", maxRent);
-      if (bedrooms) params.append("bedrooms", bedrooms);
-      if (isFurnished !== undefined) params.append("is_furnished", isFurnished.toString());
+      if (keywordVal.trim()) params.append("search", keywordVal.trim());
+      if (cityVal) params.append("city_id", cityVal.toString());
+      if (areaVal) params.append("area_id", areaVal.toString());
+      if (typeVal) params.append("property_type", typeVal);
+      if (minVal) params.append("min_rent", minVal);
+      if (maxVal) params.append("max_rent", maxVal);
+      if (bedsVal) params.append("bedrooms", bedsVal);
+      if (furnVal !== undefined) params.append("is_furnished", furnVal.toString());
 
       const url = `/properties${params.toString() ? `?${params.toString()}` : ""}`;
       const data = await apiClient<Property[]>(url, { requireAuth: false });
@@ -195,6 +221,17 @@ export default function PropertiesMarketplacePage() {
     setIsFurnished(undefined);
     setOnlyFavorites(false);
     setIsBedsDropdownOpen(false);
+
+    fetchProperties({
+      keyword: "",
+      cityId: undefined,
+      areaId: undefined,
+      type: undefined,
+      min: "",
+      max: "",
+      beds: "",
+      furnished: undefined,
+    });
   };
 
   return (
@@ -220,7 +257,7 @@ export default function PropertiesMarketplacePage() {
                   type="button"
                   onClick={() => {
                     setSearchKeyword("");
-                    setTimeout(fetchProperties, 50);
+                    fetchProperties({ keyword: "" });
                   }}
                   className="absolute right-12 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 >
@@ -229,7 +266,7 @@ export default function PropertiesMarketplacePage() {
               )}
               <button
                 type="button"
-                onClick={fetchProperties}
+                onClick={() => fetchProperties()}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
               >
                 Search
@@ -426,6 +463,7 @@ export default function PropertiesMarketplacePage() {
                 placeholder="Min PKR"
                 value={minRent}
                 onChange={(e) => setMinRent(e.target.value)}
+                onBlur={() => fetchProperties()}
                 onKeyDown={(e) => e.key === "Enter" && fetchProperties()}
                 className="w-24 px-2.5 py-2 text-xs bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-zinc-800 dark:text-zinc-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
@@ -435,6 +473,7 @@ export default function PropertiesMarketplacePage() {
                 placeholder="Max PKR"
                 value={maxRent}
                 onChange={(e) => setMaxRent(e.target.value)}
+                onBlur={() => fetchProperties()}
                 onKeyDown={(e) => e.key === "Enter" && fetchProperties()}
                 className="w-24 px-2.5 py-2 text-xs bg-zinc-100 dark:bg-darkcard border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-zinc-800 dark:text-zinc-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
